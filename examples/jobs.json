@@ -1,0 +1,44 @@
+[
+  {
+    "source": "demo",
+    "source_job_id": "job-1",
+    "title": "AI 应用开发工程师",
+    "company": "示例科技 A",
+    "cities": [
+      "深圳"
+    ],
+    "salary_text": "薪资面议",
+    "education_text": "本科",
+    "experience_text": "经验不限",
+    "employment_type_text": "全职",
+    "jd_text": "岗位职责：参与AI 应用开发工程师相关系统开发。\n技能要求：熟悉Python、RAG、FastAPI。\n学历要求：本科及以上。\n工作地点：深圳。"
+  },
+  {
+    "source": "demo",
+    "source_job_id": "job-2",
+    "title": "Python 后端开发工程师",
+    "company": "示例科技 B",
+    "cities": [
+      "深圳"
+    ],
+    "salary_text": "薪资面议",
+    "education_text": "本科",
+    "experience_text": "经验不限",
+    "employment_type_text": "全职",
+    "jd_text": "岗位职责：参与Python 后端开发工程师相关系统开发。\n技能要求：熟悉Python、MySQL、Redis。\n学历要求：本科及以上。\n工作地点：深圳。"
+  },
+  {
+    "source": "demo",
+    "source_job_id": "job-3",
+    "title": "Agent 应用开发实习生",
+    "company": "示例科技 C",
+    "cities": [
+      "深圳"
+    ],
+    "salary_text": "薪资面议",
+    "education_text": "本科",
+    "experience_text": "经验不限",
+    "employment_type_text": "实习",
+    "jd_text": "岗位职责：参与Agent 应用开发实习生相关系统开发。\n技能要求：熟悉Python、LangGraph、工具调用。\n学历要求：本科及以上。\n工作地点：深圳。"
+  }
+]

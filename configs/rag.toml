@@ -1,0 +1,38 @@
+version = "rag.v6"
+[embedding]
+path = "./models/bge-small-zh-v1.5/7999e1d3359715c523056ef9478215996d62a620"
+revision = "7999e1d3359715c523056ef9478215996d62a620"
+max_length = 512
+batch_size = 16
+[reranker]
+path = "./models/bge-reranker-v2-m3/953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+revision = "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+max_length = 512
+batch_size = 4
+[retrieval]
+recall_k = 40
+rerank_k = 15
+rrf_k = 60
+chunk_chars = 700
+chunk_overlap_lines = 1
+[model]
+timeout_seconds = 60
+max_output_tokens = 1800
+input_price_per_million = 0.0
+output_price_per_million = 0.0
+prices_configured = false
+
+[evidence]
+threshold = -2.9
+direction_threshold = -3.9
+max_passages_per_job = 6
+max_passage_chars = 240
+cache_size = 128
+
+[personalization]
+model = "Pro/deepseek-ai/DeepSeek-V3.2"
+timeout_seconds = 15
+max_concurrency = 2
+max_candidates = 20
+max_input_chars = 80000
+max_output_tokens = 2500

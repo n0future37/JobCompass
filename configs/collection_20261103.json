@@ -1,0 +1,193 @@
+{
+  "version": "targeted-collection.v1",
+  "source": "zhilian",
+  "max_new_jobs": 96,
+  "max_detail_attempts": 128,
+  "max_pages_per_target": 2,
+  "existing_snapshot": "data/processed/jobs_v2",
+  "rationale": "Expand city and early-career coverage only; not target-JD or fixed-test-answer collection. Keep historical snapshots, raw and annotations unchanged.",
+  "type_policy": "Keyword narrows search; source card and full detail must both explicitly match type. Campus is not internship; no guessed API type filter.",
+  "targets": [
+    {
+      "id": "bj_python_intern",
+      "city": "北京",
+      "keyword": "Python 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "title_any": [
+        "Python",
+        "后端",
+        "开发",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "sh_python_intern",
+      "city": "上海",
+      "keyword": "Python 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "title_any": [
+        "Python",
+        "后端",
+        "开发",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "hz_agent_full",
+      "city": "杭州",
+      "keyword": "Agent",
+      "employment_types": [
+        "全职"
+      ],
+      "title_any": [
+        "Agent",
+        "智能体",
+        "AI",
+        "大模型",
+        "开发"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "gz_python_intern",
+      "city": "广州",
+      "keyword": "Python 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "title_any": [
+        "Python",
+        "后端",
+        "开发",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "cd_data_intern",
+      "city": "成都",
+      "keyword": "数据开发 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "title_any": [
+        "数据",
+        "开发",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "nj_data_full",
+      "city": "南京",
+      "keyword": "数据开发",
+      "employment_types": [
+        "全职"
+      ],
+      "title_any": [
+        "数据",
+        "ETL",
+        "数仓"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "sz_ai_intern",
+      "city": "深圳",
+      "keyword": "AI 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "title_any": [
+        "AI",
+        "大模型",
+        "智能体",
+        "算法",
+        "人工智能",
+        "开发"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "sz_backend_campus",
+      "city": "深圳",
+      "keyword": "后端 校招",
+      "employment_types": [
+        "校园"
+      ],
+      "title_any": [
+        "后端",
+        "开发",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "bj_ai_campus",
+      "city": "北京",
+      "keyword": "人工智能 校招",
+      "employment_types": [
+        "校园"
+      ],
+      "title_any": [
+        "AI",
+        "人工智能",
+        "算法",
+        "开发",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "sh_ml_platform",
+      "city": "上海",
+      "keyword": "机器学习平台",
+      "employment_types": [
+        "全职"
+      ],
+      "title_any": [
+        "平台",
+        "算法",
+        "AI",
+        "工程师"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "su_test_intern",
+      "city": "苏州",
+      "keyword": "测试开发 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "title_any": [
+        "测试",
+        "开发"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "gz_rag_full",
+      "city": "广州",
+      "keyword": "RAG",
+      "employment_types": [
+        "全职"
+      ],
+      "title_any": [
+        "RAG",
+        "大模型",
+        "AI",
+        "智能体",
+        "算法",
+        "开发"
+      ],
+      "quota": 8
+    }
+  ]
+}

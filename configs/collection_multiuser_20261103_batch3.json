@@ -1,0 +1,337 @@
+{
+  "version": "multiuser-coverage.v1.batch3",
+  "source": "zhilian",
+  "max_new_jobs": 192,
+  "max_detail_attempts": 288,
+  "max_pages_per_target": 2,
+  "existing_snapshot": "data/processed/jobs_v4_20261103",
+  "rationale": "Broaden multi-user coverage, prioritizing undersampled professions rather than one user stack. Each of 16 sampling strata has 6 full-time and 2 internship slots across 8 cities. Strata are sourcing intent, not source/job relevance labels. Retain off-topic real JDs; report actual source jobTypeLevelName separately. Batch rotates cities; previous raw fingerprints/IDs verified before network.",
+  "request_interval_seconds": 11,
+  "admission_policy": "configs/collection_admission_v2.json",
+  "targets": [
+    {
+      "id": "finance_full",
+      "family": "财务审计",
+      "city": "杭州",
+      "keyword": "会计",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "hr_full",
+      "family": "人事行政",
+      "city": "上海",
+      "keyword": "人事专员",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "legal_full",
+      "family": "法务合规",
+      "city": "广州",
+      "keyword": "法务",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "education_full",
+      "family": "教育培训",
+      "city": "天津",
+      "keyword": "教师",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "health_full",
+      "family": "医疗护理",
+      "city": "杭州",
+      "keyword": "护士",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "logistics_full",
+      "family": "采购物流",
+      "city": "成都",
+      "keyword": "物流",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "design_full",
+      "family": "视觉设计",
+      "city": "武汉",
+      "keyword": "平面设计",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "construction_full",
+      "family": "建筑工程",
+      "city": "成都",
+      "keyword": "土木工程",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "sales_full",
+      "family": "销售商务",
+      "city": "上海",
+      "keyword": "销售",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "marketing_full",
+      "family": "市场品牌",
+      "city": "武汉",
+      "keyword": "市场专员",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "media_full",
+      "family": "传媒编辑",
+      "city": "广州",
+      "keyword": "编辑",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "customer_full",
+      "family": "客服服务",
+      "city": "西安",
+      "keyword": "客服",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "manufacturing_full",
+      "family": "机械制造",
+      "city": "北京",
+      "keyword": "机械工程师",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "electronics_full",
+      "family": "电子自动化",
+      "city": "北京",
+      "keyword": "电气工程师",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "biopharma_full",
+      "family": "生物医药",
+      "city": "天津",
+      "keyword": "生物医药",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "retail_full",
+      "family": "零售餐饮",
+      "city": "西安",
+      "keyword": "餐饮",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 8
+    },
+    {
+      "id": "finance_intern",
+      "family": "财务审计",
+      "city": "天津",
+      "keyword": "会计 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "hr_intern",
+      "family": "人事行政",
+      "city": "武汉",
+      "keyword": "人事专员 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "legal_intern",
+      "family": "法务合规",
+      "city": "西安",
+      "keyword": "法务 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "education_intern",
+      "family": "教育培训",
+      "city": "杭州",
+      "keyword": "教师 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "health_intern",
+      "family": "医疗护理",
+      "city": "天津",
+      "keyword": "护士 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "logistics_intern",
+      "family": "采购物流",
+      "city": "北京",
+      "keyword": "物流 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "design_intern",
+      "family": "视觉设计",
+      "city": "上海",
+      "keyword": "平面设计 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "construction_intern",
+      "family": "建筑工程",
+      "city": "北京",
+      "keyword": "土木工程 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "sales_intern",
+      "family": "销售商务",
+      "city": "武汉",
+      "keyword": "销售 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "marketing_intern",
+      "family": "市场品牌",
+      "city": "上海",
+      "keyword": "市场专员 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "media_intern",
+      "family": "传媒编辑",
+      "city": "西安",
+      "keyword": "编辑 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "customer_intern",
+      "family": "客服服务",
+      "city": "广州",
+      "keyword": "客服 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "manufacturing_intern",
+      "family": "机械制造",
+      "city": "成都",
+      "keyword": "机械工程师 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "electronics_intern",
+      "family": "电子自动化",
+      "city": "成都",
+      "keyword": "电气工程师 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "biopharma_intern",
+      "family": "生物医药",
+      "city": "杭州",
+      "keyword": "生物医药 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    },
+    {
+      "id": "retail_intern",
+      "family": "零售餐饮",
+      "city": "广州",
+      "keyword": "餐饮 实习",
+      "employment_types": [
+        "实习"
+      ],
+      "quota": 4
+    }
+  ],
+  "previous_collections": [
+    "artifacts/collections/20261103T115318605450Z/checkpoint.json",
+    "artifacts/collections/20261103T122220303061Z/checkpoint.json"
+  ]
+}

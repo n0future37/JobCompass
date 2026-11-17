@@ -1,0 +1,28 @@
+name: jobcompass
+x-app: &app
+  build: .
+  image: jobcompass:local
+  env_file: .env.local
+  environment:
+    JOBCOMPASS_ENV: dev
+    JOBCOMPASS_ROOT: /app
+    MYSQL_HOST: host.docker.internal
+    REDIS_HOST: host.docker.internal
+    MILVUS_URI: http://host.docker.internal:19530
+    EMBEDDING_PATH: /models/embedding
+    RERANKER_PATH: /models/reranker
+    REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in current shell from local secure configuration}
+    SILI_API_KEY: ${SILI_API_KEY:-}
+  volumes:
+    - ./data:/app/data
+    - ./artifacts:/app/artifacts
+    - ./web:/app/web:ro
+    - ${EMBEDDING_PATH:?Set EMBEDDING_PATH}:/models/embedding:ro
+    - ${RERANKER_PATH:?Set RERANKER_PATH}:/models/reranker:ro
+services:
+  api:
+    <<: *app
+    ports: ["127.0.0.1:8000:8000"]
+  worker:
+    <<: *app
+    command: ["python", "-m", "jobcompass", "worker"]

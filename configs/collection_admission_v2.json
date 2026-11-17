@@ -1,0 +1,14 @@
+{
+  "version": "collection-admission.v2",
+  "scope": "Retain genuine full job descriptions across occupations, including off-topic candidates. Relevance is query-dependent, not an admission label.",
+  "title_filter": false,
+  "requirements": [
+    "Successful public source response; no verification/error response",
+    "Consistent source job identity",
+    "Nonempty title and full JD; reject corrupted decoding",
+    "Preserve unknown optional fields; deduplicate by source identity/content version"
+  ],
+  "sampling": "City/type quotas and request caps remain; search keywords guide sourcing, not relevance gold. Historical title_any no longer gates source cards.",
+  "supersedes": "collection-admission.v1",
+  "reason": "User explicitly permits out-of-scope roles and realistic retrieval noise on 2026-11-03."
+}

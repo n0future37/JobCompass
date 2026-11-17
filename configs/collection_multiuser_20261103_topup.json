@@ -1,0 +1,98 @@
+{
+  "version": "multiuser-balance-topup.v1",
+  "source": "zhilian",
+  "max_new_jobs": 30,
+  "max_detail_attempts": 60,
+  "max_pages_per_target": 2,
+  "existing_snapshot": "data/processed/jobs_v5_multiuser_20261103",
+  "previous_collections": [
+    "artifacts/collections/20261103T115318605450Z/checkpoint.json",
+    "artifacts/collections/20261103T122220303061Z/checkpoint.json",
+    "artifacts/collections/20261103T130006710693Z/checkpoint.json"
+  ],
+  "request_interval_seconds": 11,
+  "admission_policy": "configs/collection_admission_v2.json",
+  "rationale": "Water-fill lowest sampling-family counts first, cap32 per family; choose cities with lower actual new-job counts, avoid already sampled full-time city for that family where possible. Source fields and internship gaps unchanged. All source-valid off-topic candidates retained; no model calls, no test-answer selection.",
+  "targets": [
+    {
+      "id": "balance_01",
+      "family": "人事行政",
+      "city": "上海",
+      "keyword": "招聘专员",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 12
+    },
+    {
+      "id": "balance_02",
+      "family": "人事行政",
+      "city": "武汉",
+      "keyword": "人力资源",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 3
+    },
+    {
+      "id": "balance_03",
+      "family": "医疗护理",
+      "city": "武汉",
+      "keyword": "护士",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 6
+    },
+    {
+      "id": "balance_04",
+      "family": "法务合规",
+      "city": "成都",
+      "keyword": "法务专员",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 2
+    },
+    {
+      "id": "balance_05",
+      "family": "电子自动化",
+      "city": "杭州",
+      "keyword": "电气工程师",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 2
+    },
+    {
+      "id": "balance_06",
+      "family": "采购物流",
+      "city": "西安",
+      "keyword": "采购专员",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 2
+    },
+    {
+      "id": "balance_07",
+      "family": "市场品牌",
+      "city": "天津",
+      "keyword": "市场专员",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 2
+    },
+    {
+      "id": "balance_08",
+      "family": "传媒编辑",
+      "city": "成都",
+      "keyword": "编辑",
+      "employment_types": [
+        "全职"
+      ],
+      "quota": 1
+    }
+  ]
+}

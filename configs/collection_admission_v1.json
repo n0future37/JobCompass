@@ -1,0 +1,35 @@
+{
+  "version": "collection-admission.v1",
+  "scope": "New software/AI/data/test engineering candidates only; not relevance qrels. Historic1004 retained unchanged.",
+  "title_exclude": [
+    "营销",
+    "销售",
+    "商务",
+    "产品经理",
+    "产品运营",
+    "数据运营",
+    "射频",
+    "机械设计",
+    "结构工程师",
+    "电路设计",
+    "机能、结构、电装"
+  ],
+  "title_any": [
+    "Python",
+    "后端",
+    "前端",
+    "软件",
+    "开发",
+    "算法",
+    "数据",
+    "AI",
+    "Agent",
+    "智能体",
+    "大模型",
+    "测试",
+    "平台",
+    "人工智能"
+  ],
+  "min_jd_chars": 30,
+  "notes": "Search keywords are only candidate sourcing, not verified task labels. Excluded bodies stay immutable raw. No test-answer-based selection or model calls."
+}
