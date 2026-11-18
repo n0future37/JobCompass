@@ -20,6 +20,7 @@ from .identity import Identity
 from .importing import TextImportRequest, prepare_text_import
 from .preprocessing import digest
 from .service import RagService
+from .errors import QueryCapacityError
 from .settings import ROOT
 from .storage import jobs
 from .tasks import TaskQueue
@@ -219,6 +220,8 @@ def search(
         value.profile = user["profile"].get("text", "")
     try:
         return svc.query(value, owner=user["id"], request_id=request.state.request_id)
+    except QueryCapacityError:
+        raise HTTPException(503, "查询容量暂满，请稍后重试", headers={"Retry-After": "2"}) from None
     except Exception as error:
         logger.warning(
             json.dumps(

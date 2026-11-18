@@ -3,7 +3,9 @@
 import json
 import math
 import re
-from collections import Counter, defaultdict
+import threading
+from collections import Counter, OrderedDict, defaultdict
+from copy import deepcopy
 from time import perf_counter
 
 import numpy as np
@@ -13,7 +15,7 @@ from .intent import parse_intent
 from .models import LocalModels
 from .preprocessing import digest
 from .settings import ROOT, Settings
-from .storage import Store
+from .storage import Store, corpus_fingerprint
 
 
 def tokenize(text):
@@ -32,15 +34,28 @@ class BM25:
         self.lengths = np.array([sum(c.values()) for c in self.counts])
         self.average = float(np.mean(self.lengths)) if len(jobs) else 1.0
         self.document_frequency = Counter(t for c in self.counts for t in c)
+        postings = defaultdict(lambda: ([], []))
+        for index, counts in enumerate(self.counts):
+            for term, frequency in counts.items():
+                postings[term][0].append(index)
+                postings[term][1].append(frequency)
+        self.postings = {
+            term: (np.asarray(indices), np.asarray(frequencies, dtype=np.float64))
+            for term, (indices, frequencies) in postings.items()
+        }
 
     def scores(self, query):
         scores = np.zeros(len(self.counts), dtype=np.float64)
         size = len(self.counts)
         for term in set(tokenize(query)):
+            if term not in self.postings:
+                continue
             df = self.document_frequency[term]
             idf = math.log(1 + (size - df + 0.5) / (df + 0.5))
-            tf = np.array([c[term] for c in self.counts])
-            scores += idf * tf * 2.5 / (tf + 1.5 * (0.25 + 0.75 * self.lengths / self.average))
+            indices, tf = self.postings[term]
+            scores[indices] += (
+                idf * tf * 2.5 / (tf + 1.5 * (0.25 + 0.75 * self.lengths[indices] / self.average))
+            )
         return scores
 
 
@@ -88,6 +103,39 @@ def milvus(settings):
         db_name=settings.db_name,
         timeout=20,
     )
+
+
+class IndexValidationError(RuntimeError):
+    """派生索引未通过校验，允许worker重试；不是用户导入文件错误。"""
+
+
+def validate_index(client, collection, passages):
+    # 统计row_count可能包括upsert后尚未回收的旧记录，不能作为有效记录数。
+    response = client.query(
+        collection_name=collection,
+        filter="",
+        output_fields=["count(*)"],
+        consistency_level="Strong",
+        timeout=20,
+    )
+    count = response[0].get("count(*)") if len(response) == 1 else None
+    if type(count) is not int or count != len(passages):
+        raise IndexValidationError(f"索引有效计数不符：{count}/{len(passages)}")
+    fields = ("id", "job_key", "content_hash", "version")
+    for start in range(0, len(passages), 100):
+        batch = passages[start : start + 100]
+        rows = client.query(
+            collection_name=collection,
+            filter="id in " + json.dumps([row["id"] for row in batch]),
+            output_fields=list(fields),
+            consistency_level="Strong",
+            timeout=20,
+        )
+        expected = {row["id"]: tuple(row[field] for field in fields) for row in batch}
+        actual = {row.get("id"): tuple(row.get(field) for field in fields) for row in rows}
+        if len(rows) != len(batch) or actual != expected:
+            raise IndexValidationError("索引文本块身份、版本或内容指纹不符")
+    return count
 
 
 def build_index(settings=None):
@@ -143,9 +191,7 @@ def build_index(settings=None):
             ]
             client.upsert(collection_name=collection, data=data)
         client.flush(collection_name=collection)
-        count = int(client.get_collection_stats(collection_name=collection)["row_count"])
-        if count != len(passages):
-            raise ValueError(f"索引计数不符：{count}/{len(passages)}")
+        validate_index(client, collection, passages)
         manifest = dict(
             snapshot=snapshot,
             index_version=index_version,
@@ -187,20 +233,49 @@ class Retriever:
         self.lexical = BM25(self.jobs)
         self.client = None
         self.index_manifest = index_manifest
+        self.snapshot_lock = threading.Lock()
+        self.client_lock = threading.Lock()
+        self.filter_lock = threading.Lock()
+        self.filter_cache = OrderedDict()
+        self.revision = digest([[j["job_key"], j["content_hash"], j["version"]] for j in self.jobs])
+
+    def snapshot(self):
+        revision = corpus_fingerprint(self.store)
+        with self.snapshot_lock:
+            if revision != self.revision:
+                latest = self.store.all_jobs()
+                lexical = BM25(latest)
+                self.jobs = latest
+                self.by_key = {j["job_key"]: j for j in latest}
+                self.lexical = lexical
+                self.revision = digest([[j["job_key"], j["content_hash"], j["version"]] for j in latest])
+            # 查询持有自己的快照引用；后续刷新不会改变正在执行的查询。
+            return self.revision, self.jobs, self.by_key, self.lexical
+
+    def eligibility(self, revision, by_key, conditions):
+        key = digest([revision, conditions])
+        with self.filter_lock:
+            if key not in self.filter_cache:
+                eligible, checks = [], {}
+                for job_key, job in by_key.items():
+                    passed, row_checks = assess(job, conditions)
+                    if passed:
+                        eligible.append(job_key)
+                        checks[job_key] = row_checks
+                self.filter_cache[key] = (eligible, checks)
+                if len(self.filter_cache) > 32:
+                    self.filter_cache.popitem(last=False)
+            self.filter_cache.move_to_end(key)
+            return self.filter_cache[key]
 
     def search(self, request, *, include_trace=False, eligible_keys=None, query_plan=None):
         start = perf_counter()
         # MySQL是权威来源；新增、更新和下架后不继续使用旧词法快照。
-        latest_jobs = self.store.all_jobs()
-        if [(j["job_key"], j["content_hash"], j["version"]) for j in latest_jobs] != [
-            (j["job_key"], j["content_hash"], j["version"]) for j in self.jobs
-        ]:
-            self.jobs = latest_jobs
-            self.by_key = {j["job_key"]: j for j in self.jobs}
-            self.lexical = BM25(self.jobs)
+        revision, current_jobs, current, lexical = self.snapshot()
+        refresh_ms = (perf_counter() - start) * 1000
         intent = parse_intent(request)
         conditions, unresolved = intent.conditions(), intent.unresolved
-        timings, degraded = {}, []
+        timings, degraded = {"corpus_snapshot": refresh_ms}, []
         if unresolved:
             return dict(
                 results=[],
@@ -210,22 +285,14 @@ class Retriever:
                 degradations=[],
                 timings_ms={},
                 no_result_reason="存在未支持的明确硬条件，请使用可核验字段",
+                corpus_revision=revision,
             )
-        current = self.store.current(self.by_key)
-        eligible, checks = [], {}
-        for key, job in current.items():
-            if eligible_keys is not None and key not in eligible_keys:
-                continue
-            if (
-                key not in self.by_key
-                or job["content_hash"] != self.by_key[key]["content_hash"]
-                or job["version"] != self.by_key[key]["version"]
-            ):
-                continue
-            passed, row_checks = assess(job, conditions)
-            if passed:
-                eligible.append(key)
-                checks[key] = row_checks
+        t = perf_counter()
+        eligible, checks = self.eligibility(revision, current, conditions)
+        if eligible_keys is not None:
+            permitted = set(eligible_keys)
+            eligible = [key for key in eligible if key in permitted]
+        timings["eligibility"] = (perf_counter() - t) * 1000
         if not eligible:
             return dict(
                 results=[],
@@ -235,14 +302,15 @@ class Retriever:
                 degradations=[],
                 timings_ms={},
                 no_result_reason="没有可确认满足全部硬条件的岗位；未知字段不算满足",
+                corpus_revision=revision,
             )
         allowed = set(eligible)
         t = perf_counter()
-        lexical_scores = self.lexical.scores(query_plan["lexical_query"] if query_plan else request.query)
+        lexical_scores = lexical.scores(query_plan["lexical_query"] if query_plan else request.query)
         sparse = [
             j["job_key"]
             for i, j in sorted(
-                enumerate(self.jobs),
+                enumerate(current_jobs),
                 key=lambda p: (-lexical_scores[p[0]], p[1]["job_key"]),
             )
             if j["job_key"] in allowed and lexical_scores[i] > 0
@@ -255,16 +323,15 @@ class Retriever:
                 manifest = self.index_manifest or json.loads(
                     (ROOT / "artifacts/indexes" / self.settings.stage / "current.json").read_bytes()
                 )
-                if manifest["snapshot"] != digest(
-                    [[j["job_key"], j["content_hash"], j["version"]] for j in self.jobs]
-                ):
+                if manifest["snapshot"] != revision:
                     raise RuntimeError("当前向量索引尚未同步，使用最新词法检索")
                 if {k: v for k, v in manifest["embedding"].items() if k != "path"} != {
                     k: v for k, v in self.settings.config["embedding"].items() if k != "path"
                 } or manifest["retrieval"] != self.settings.config["retrieval"]:
                     raise RuntimeError("索引参数已改变，需重建")
-                if self.client is None:
-                    self.client = milvus(self.settings)
+                with self.client_lock:
+                    if self.client is None:
+                        self.client = milvus(self.settings)
                 vector = self.models.encode(
                     [query_plan["dense_query"] if query_plan else request.query],
                     query=query_plan["dense_is_query"] if query_plan else True,
@@ -342,10 +409,11 @@ class Retriever:
                     )
                 ),
             )
+        latest_rows = self.store.current(ordered[: request.top_k])
         for rank, key in enumerate(ordered[: request.top_k], 1):
             job = current[key]
             # 再核验一次，避免检索过程中岗位下架或版本变化。
-            latest = self.store.current([key]).get(key)
+            latest = latest_rows.get(key)
             if (
                 not latest
                 or latest["content_hash"] != job["content_hash"]
@@ -355,8 +423,8 @@ class Retriever:
             results.append(
                 dict(
                     rank=rank,
-                    job=job,
-                    hard_condition_checks=checks[key],
+                    job=deepcopy(job),
+                    hard_condition_checks=deepcopy(checks[key]),
                     dense_score=dense_scores.get(key),
                 )
             )
@@ -370,6 +438,7 @@ class Retriever:
             timings_ms=timings,
             no_result_reason=None if results else "本次检索没有找到足够相关的岗位证据",
             soft_preferences=preferred,
+            corpus_revision=revision,
         )
 
         if include_trace:

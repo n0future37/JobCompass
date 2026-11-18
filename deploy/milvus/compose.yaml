@@ -1,0 +1,61 @@
+name: jobcompass-vector
+x-image: &milvus-image ${MILVUS_IMAGE:-milvusdb/milvus:v3.0.3}
+services:
+  volume-init:
+    image: *milvus-image
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    restart: "no"
+    entrypoint: [/bin/sh, -ec]
+    command: ['chown -R "$$(id -u milvus):$$(id -g milvus)" /var/lib/milvus']
+    volumes: [milvus_data:/var/lib/milvus]
+  etcd:
+    image: ${ETCD_IMAGE:-quay.io/coreos/etcd:v3.5.25}
+    command: [etcd, --advertise-client-urls=http://etcd:2379, --listen-client-urls=http://0.0.0.0:2379, --data-dir=/etcd]
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "268435456"
+      ETCD_SNAPSHOT_COUNT: "10000"
+    volumes: [etcd_data:/etcd]
+    mem_limit: 128m
+    cpus: 0.25
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: [CMD, etcdctl, --endpoints=http://127.0.0.1:2379, endpoint, health]
+      interval: 2s
+      timeout: 2s
+      retries: 45
+  milvus:
+    image: *milvus-image
+    command: [milvus, run, standalone]
+    environment:
+      ETCD_USE_EMBED: "false"
+      ETCD_ENDPOINTS: etcd:2379
+      COMMON_STORAGETYPE: local
+      COMMON_SECURITY_AUTHORIZATIONENABLED: "true"
+      COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD:?Set a private root password}
+      DEPLOY_MODE: STANDALONE
+      OMP_NUM_THREADS: "1"
+    volumes:
+      - milvus_data:/var/lib/milvus
+      - ./milvus.yaml:/milvus/configs/user.yaml:ro
+    ports: ["127.0.0.1:${MILVUS_PORT:-19540}:19530"]
+    mem_limit: 1280m
+    cpus: 1
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+    depends_on:
+      volume-init: {condition: service_completed_successfully}
+      etcd: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9091/healthz]
+      interval: 2s
+      timeout: 2s
+      retries: 90
+volumes:
+  milvus_data:
+  etcd_data:

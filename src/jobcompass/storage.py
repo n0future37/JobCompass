@@ -93,6 +93,18 @@ class Store:
         self.settings = settings or Settings()
         self.engine = engine(self.settings)
 
+    def corpus_revision(self):
+        """只取当前有效岗位的身份/版本，避免为缓存键反复解码全部JD正文。"""
+        from .preprocessing import digest
+
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(jobs.c.job_key, jobs.c.content_hash, jobs.c.version)
+                .where(jobs.c.active.is_(True))
+                .order_by(jobs.c.job_key)
+            )
+            return digest([list(row) for row in rows])
+
     def upsert_import(self, snapshot, owner="system"):
         manifest = json.loads((snapshot / "manifest.json").read_bytes())
         # JSON字符串中的U+2028等字符不是JSONL分隔符，不能使用str.splitlines()。
@@ -283,3 +295,12 @@ class Store:
 
     def close(self):
         self.engine.dispose()
+
+
+def corpus_fingerprint(store):
+    """业务存储使用轻量SQL；离线评测的只读内存适配器保持兼容。"""
+    if hasattr(store, "corpus_revision"):
+        return store.corpus_revision()
+    from .preprocessing import digest
+
+    return digest([[j["job_key"], j["content_hash"], j["version"]] for j in store.all_jobs()])

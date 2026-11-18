@@ -111,7 +111,10 @@ pytest -m "not integration" -q
 ## 实现文档
 
 - [系统架构与数据职责](docs/architecture.md)
+- [检索并发与缓存边界](docs/search-concurrency.md)
+- [Milvus独立部署、停机与恢复](docs/milvus-lifecycle.md)
 - [导入格式、岗位身份与版本](docs/importing.md)
+- [重复索引构建、校验与重试](docs/index-validation.md)
 - [条件解析与未知字段](docs/conditions.md)
 - [职责与引用证据校验](docs/evidence-sufficiency.md)
 - [简历解析与画像确认](docs/resume-upload.md)

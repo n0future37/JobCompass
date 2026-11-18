@@ -13,9 +13,10 @@ from .explanations import ExplanationService
 from .personalized_ranking import PersonalizedRanker
 from .generation import Generator
 from .evidence import apply_evidence_result
+from .errors import QueryCapacityError
 from .retrieval import Retriever
 from .settings import ROOT, Settings
-from .storage import Store
+from .storage import Store, corpus_fingerprint
 
 logger = logging.getLogger("jobcompass")
 
@@ -54,15 +55,17 @@ class RagService:
         return self.retriever
 
     def query(self, request, owner="cli", persist=True, request_id=None):
+        admission_started = perf_counter()
         if not self.limit.acquire(timeout=2):
-            raise RuntimeError("当前查询较多，请稍后重试")
+            raise QueryCapacityError("当前查询较多，请稍后重试")
+        admission_ms = (perf_counter() - admission_started) * 1000
         request_id, started = request_id or str(uuid.uuid4()), perf_counter()
         try:
             retriever = self.get_retriever()
             # 把整个有效语料版本纳入缓存键，新增和下架也会使缓存失效。
-            from .preprocessing import digest
-
-            corpus = digest([[j["job_key"], j["content_hash"], j["version"]] for j in self.store.all_jobs()])
+            corpus_started = perf_counter()
+            corpus = corpus_fingerprint(self.store)
+            corpus_ms = (perf_counter() - corpus_started) * 1000
             cache_key = (
                 self.settings.prefix
                 + "recall:"
@@ -93,7 +96,7 @@ class RagService:
                         cached, cache_state = candidate, "hit"
             except (redis.RedisError, ValueError):
                 cache_state = "unavailable"
-            # Retriever持有可刷新的词法结构和模型；同一实例搜索时串行更新快照。
+            # Retriever仅在刷新共享快照时加锁，各请求独立执行检索。
             if cached is not None:
                 retrieval = dict(
                     cached,
@@ -104,9 +107,13 @@ class RagService:
                     dict(row, job=current[row["job"]["job_key"]]) for row in retrieval["results"]
                 ]
             else:
-                with self.start_lock:
-                    retrieval = retriever.search(request)
-            if cached is None and cache_state != "unavailable" and not retrieval["degradations"]:
+                retrieval = retriever.search(request)
+            if (
+                cached is None
+                and cache_state != "unavailable"
+                and not retrieval["degradations"]
+                and retrieval.get("corpus_revision") == corpus
+            ):
                 try:
                     self.redis.set(cache_key, json.dumps(retrieval, ensure_ascii=False), ex=120)
                 except redis.RedisError:
@@ -136,6 +143,7 @@ class RagService:
                 cache=cache_state,
                 total_ms=(perf_counter() - started) * 1000,
                 timing_scope="查询进入至检索和证据组装完成；不含历史/文件写入与页面传输；完整HTTP用时见请求日志",
+                service_timings_ms={"admission_wait": admission_ms, "corpus_fingerprint": corpus_ms},
             )
             if persist:
                 result["query_id"] = self.store.save_history(owner, result)

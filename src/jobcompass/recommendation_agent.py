@@ -14,6 +14,7 @@ from pydantic import Field
 from .career import Background, Career, applications, background_checks, preferences, soft_signals
 from .conditions import SearchRequest
 from .evidence import apply_evidence_result, direction_query
+from .errors import QueryCapacityError
 from .personalized_ranking import rule_order
 from .settings import ROOT
 
@@ -46,7 +47,7 @@ class RecommendationAgent:
         svc, started = self.service, perf_counter()
         request_id = request_id or str(uuid.uuid4())
         if not svc.limit.acquire(timeout=2):
-            raise RuntimeError("当前查询较多，请稍后重试")
+            raise QueryCapacityError("当前查询较多，请稍后重试")
         try:
             career = Career(svc.store)
             background = Background.model_validate(career.background(owner))
@@ -91,10 +92,9 @@ class RecommendationAgent:
             def retrieve_jobs(query: str) -> dict:
                 """按本轮条件和本地核验范围检索公开岗位。"""
                 retriever = svc.get_retriever()
-                with svc.start_lock:
-                    return retriever.search(
-                        public.model_copy(update={"query": query}), eligible_keys=prepared["eligible"]
-                    )
+                return retriever.search(
+                    public.model_copy(update={"query": query}), eligible_keys=prepared["eligible"]
+                )
 
             def retrieve(state):
                 t = perf_counter()

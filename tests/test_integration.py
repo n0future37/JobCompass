@@ -10,6 +10,7 @@ from sqlalchemy import select, update
 
 from jobcompass.identity import Identity
 from jobcompass.preprocessing import digest, write_jsonl
+from jobcompass.retrieval import IndexValidationError
 from jobcompass.storage import jobs, versions
 from jobcompass.tasks import TaskQueue, tasks
 
@@ -39,9 +40,12 @@ def test_mysql_import_versions_idempotency_rollback(real_store, tmp_path, job_fa
     one = job_factory(sid, jd="Python\u2028接口开发")
     first = snapshot(tmp_path / "one", [one], "one")
     assert s.upsert_import(first, s.test_owner)["status"] == "completed"
+    initial_revision = s.corpus_revision()
+    assert initial_revision == digest([[j["job_key"], j["content_hash"], j["version"]] for j in s.all_jobs()])
     assert s.upsert_import(first, s.test_owner)["status"] == "already_imported"
     two = job_factory(sid, jd="Python和MySQL接口", collected_at="2026-10-03T00:00:00+00:00")
     s.upsert_import(snapshot(tmp_path / "two", [two], "two"), s.test_owner)
+    assert s.corpus_revision() != initial_revision
     assert s.current([one["job_key"]])[one["job_key"]]["version"] == 2
     # 恢复成旧内容也必须形成第3版，不能覆盖第1版。
     restored = dict(one, collected_at="2026-10-04T00:00:00+00:00")
@@ -130,7 +134,16 @@ class FixedModels:
         return np.arange(len(jobs), 0, -1)
 
 
-def test_worker_retry_after_sql_commit_keeps_one_job_and_version(real_store, tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "error_type",
+    [
+        TimeoutError,
+        IndexValidationError,
+    ],
+)
+def test_worker_retry_after_sql_commit_keeps_one_job_and_version(
+    real_store, tmp_path, monkeypatch, error_type
+):
     from jobcompass import settings, worker
 
     s = real_store
@@ -151,7 +164,7 @@ def test_worker_retry_after_sql_commit_keeps_one_job_and_version(real_store, tmp
     )
 
     def broken(*a):
-        raise TimeoutError("fixed index failure after SQL commit")
+        raise error_type("fixed index failure after SQL commit")
 
     assert worker.work_once(config, index_builder=broken)
     assert q.get(s.test_owner, row["id"])["status"] == "retrying"

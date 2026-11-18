@@ -1,0 +1,9 @@
+common:
+  security:
+    authorizationEnabled: true
+queryNode:
+  cache:
+    memoryLimit: 134217728
+  segcore:
+    interimIndex:
+      enabled: false
